@@ -43,6 +43,7 @@ bool blinkState = false;
 //**********INITIALIZATION*******************
 //Connection Pins
 const int signalPin = 33; // GPIO 33 
+const int signalOutPin = 8; // GPIO 8
 const int redButton = 32;//GPIO 32
 const int whiteButton = 31;//GPIO 31
 const int potPin = 14;//AIN 0 Potentiometer Pin
@@ -93,8 +94,9 @@ int currAmplitude = 0;
 int longPressThresh = 3000;//Time for a press to be registered as a long press in ms
 
 //Printing out the values
-void serialThrustAcc(int16_t ax,int16_t ay,int16_t az,int16_t gx,int16_t gy,int16_t gz,float thrusts[4]){
+void serialThrustAcc(int16_t ax,int16_t ay,int16_t az,int16_t gx,int16_t gy,int16_t gz,float thrusts[4],unsigned long reltime){
   //This function will send all of the accellerometer data as well as the thrust values back to the computer over serial.
+  Serial.print(reltime); Serial.print(",");
   Serial.print(ax); Serial.print(",");
   Serial.print(ay); Serial.print(",");
   Serial.print(az); Serial.print(",");
@@ -168,6 +170,10 @@ void setup() {
   //Initialize the button
   pinMode(whiteButton, INPUT);
   pinMode(redButton, INPUT);
+
+  //Initialize the signal Sender
+  pinMode(signalOutPin,OUTPUT);
+  digitalWrite(signalOutPin,LOW);
 
  
 
@@ -255,21 +261,24 @@ void loop() {
    accelgyro.getMotion6(&ax, &ay, &az, &gx, &gy, &gz);
 
    //Wait for the white button while sending all of the thrust and accellerometer values
-   while(!digitalRead(whiteButton)){
+   //while(!digitalRead(whiteButton)){
    //while(!Serial.available()){
       if(micros() > (currTime + stepSize)){
          //Step the time and send the accelleration and thrust values
          accelgyro.getMotion6(&ax, &ay, &az, &gx, &gy, &gz);
-         serialThrustAcc(ax,ay,az,gx,gy,gz,thrusts);
+         serialThrustAcc(ax,ay,az,gx,gy,gz,thrusts,0);
          currTime += stepSize;
          fastflash(1,ledPin);
       };
    };
-   Serial.read();
+   //Serial.read();
 
 
    //Once the red button has been pushed the oscillation should start
-    oscStartTime = micros();
+    unsigned long oscStartTime = micros();
+    startTime = micros();//Get the current time
+    currTime = startTime;
+    digitalWrite(signalOutPin, HIGH);
 
     //Run the osciallation until the red button is pushed
    while(!digitalRead(redButton)){
@@ -286,7 +295,7 @@ void loop() {
       if(micros() > (currTime + stepSize)){
          //Step the time and send the accelleration and thrust values
          accelgyro.getMotion6(&ax, &ay, &az, &gx, &gy, &gz);
-         serialThrustAcc(ax,ay,az,gx,gy,gz,thrusts);
+         serialThrustAcc(ax,ay,az,gx,gy,gz,thrusts,currTime);
          currTime += stepSize;
       };
       if(micros() < oscStartTime + microssteps){
@@ -304,13 +313,14 @@ void loop() {
             }
           }//end if 
     }//End while
-    Serial.read();
+    //Serial.read();
     //turn all motors off
     setAllMotors(motors, 0, numberMotors);
     thrusts[0] = 0;
     thrusts[1] = 0;
     thrusts[2] = 0;
     thrusts[3] = 0;
+    digitalWrite(signalOutPin, LOW);
 
     //Wait for the white button while sending accellerometer values
    while(!digitalRead(whiteButton)){
@@ -332,127 +342,7 @@ void loop() {
      Serial.println(verticalOffset);
 
    
-
-/*
-  if(digitalRead(armButton)){
-    flash(1,ledPin);
-  }
-
-  //Get the frequency from the potentiometer
-  currentFreq = floatMap(analogRead(potPin),0,4096,minFreq,maxFreq);
-  microssteps = (int)(1000000/((float)nSamplesOsc*currentFreq));
-  //Serial.println(microssteps);
-  //microssteps = 5000;
-  
-
-  //Check for arming buttonpush
-  if(digitalRead(armButton) && !armPushedLast){
-    flash(2,ledPin);
-    armPushedLast = true;
-    armDepressedTime = millis();
-  }else if(!digitalRead(armButton) && armPushedLast){
-    armPushedLast = false;
-    //do a time check to see if it was a short or a long button press
-    if( (millis()-armDepressedTime) > longPressThresh){
-      //Long button press
-      if(!armed){
-        armCommand = true;
-        flash(2,ledPin);
-      }else{
-        disarmCommand = true;
-      }//end armed if
-    }else {
-      //short button push
-      idling = !idling;//Toggle the idling of the motor
-      startTime = micros();
-    }
-  }else if(!digitalRead(armButton)){
-    armPushedLast = false;
-  }//end if
-
-  //Check for the other button push
-  if(digitalRead(amplButton) && !amplPushedLast){
-    amplPushedLast = true;
-  }else if(!digitalRead(amplButton) && amplPushedLast){
-    amplPushedLast = false;
-    //activate the amplitude switch
-    currAmplitude = (currAmplitude+1) % numAmpl;
-    //This will be the index variable that will be used when calculating the power settings of the motor
-  }
-
-  //Do whatever motor stuff is necessary based on the button push
-
-  //If the arm command has been sent
-  if(armCommand){
-    //Reset the armCommand to 0 so that it doesnt try to do it the next time through the loop
-    armCommand = false;
-    setAllMotors(motors, 0, numberMotors);
-    delay(2000);
-    flash(1,ledPin);
-    setAllMotors(motors, 100, numberMotors);
-    delay(5000);
-    flash(2,ledPin);
-    setAllMotors(motors, 0, numberMotors);
-    delay(5000);
-    flash(3,ledPin);
-    setAllMotors(motors, 10, numberMotors);
-    delay(5000);
-    flash(4,ledPin);
-    setAllMotors(motors, 40, numberMotors);
-    delay(1000);
-    flash(5,ledPin);
-    setAllMotors(motors, 60, numberMotors);
-    startTime = micros();
-    armed = true;
-  }
-
-  //Check for the disarm command
-  if(disarmCommand){
-    disarmCommand = false;
-    setAllMotors(motors,0,numberMotors);
-    armed = false;
-    flash(4,ledPin);
-  }
-
-  //Check whether it is armed/idlinig
-  if(armed){
-    if(idling){
-      //if idling set all of the motors to their idle speed
-      setAllMotors(motors, 17, numberMotors);
-      idlingLast = true;
-    }else{
-      if(idlingLast){
-      }
-      idlingLast = false;
-      //This is where the motors need to be set to their oscillation speed.
-      if(micros() < startTime + microssteps){
-        for(int i = 0; i < numberMotors; i++){
-          setMotor(motors,(singleSine[currSteps[i]]*amplitudes[currAmplitude]+verticalOffset),i);
-          /*
-          Serial.println("Curr Step");
-          Serial.println(currSteps[i]);
-          Serial.println("Amplitude");
-          Serial.println(amplitudes[currAmplitude]);
-          Serial.println("currAmplitude");
-          Serial.println(currAmplitude);
-          Serial.println(singleSine[currSteps[i]]*amplitudes[currAmplitude]+verticalOffset);
-          
-          
-        }
-      }else{
-        startTime = startTime + microssteps;
-        //iterate all of the current steps;
-        for(int i = 0; i <  numberMotors; i++){
-          //Change the currSteps
-          currSteps[i] += 1;
-          currSteps[i] = currSteps[i] % nSamplesOsc;
-          //Serial.println(currSteps[i]);
-        }
-      }//end if 
-    }
-    
-  }
-  */
+ 
   
   
 }// end loop
