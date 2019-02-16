@@ -214,9 +214,9 @@ void loop() {
    microssteps = (int)(1000000/((float)nSamplesOsc*frequency));
 
    //Wait for the white button to be pushed ***Tested
-   //while(!digitalRead(whiteButton)){};
-   while(!Serial.available()){};
-   Serial.read();
+   while(!digitalRead(whiteButton)){};
+   //while(!Serial.available()){};
+   //Serial.read();
 
    Serial.println("Arming Motors");
 
@@ -246,17 +246,17 @@ void loop() {
    
 
    //Wait for the red button to start the accellerometer
-   //while(!digitalRead(redButton)){};//wait for the red button to be pushed
-   while(!Serial.available());
-   Serial.read();
+   while(!digitalRead(redButton)){};//wait for the red button to be pushed
+   //while(!Serial.available());
+   //Serial.read();
    
    startTime = micros();//Get the current time
    currTime = startTime;
    accelgyro.getMotion6(&ax, &ay, &az, &gx, &gy, &gz);
 
    //Wait for the white button while sending all of the thrust and accellerometer values
-   //while(!digitalRead(whiteButton)){
-   while(!Serial.available()){
+   while(!digitalRead(whiteButton)){
+   //while(!Serial.available()){
       if(micros() > (currTime + stepSize)){
          //Step the time and send the accelleration and thrust values
          accelgyro.getMotion6(&ax, &ay, &az, &gx, &gy, &gz);
@@ -272,8 +272,8 @@ void loop() {
     oscStartTime = micros();
 
     //Run the osciallation until the red button is pushed
-    //while(!digitalRead(redButton)){
-   while(!Serial.available()){
+   while(!digitalRead(redButton)){
+   //while(!Serial.available()){
     /*
       if(Serial.available()){
         frequency = Serial.parseFloat();
@@ -313,8 +313,8 @@ void loop() {
     thrusts[3] = 0;
 
     //Wait for the white button while sending accellerometer values
-   //while(!digitalRead(whiteButton)){
-   while(!Serial.available()){
+   while(!digitalRead(whiteButton)){
+   //while(!Serial.available()){
       if(micros() > (currTime + stepSize)){
          //Step the time and send the accelleration and thrust values
          accelgyro.getMotion6(&ax, &ay, &az, &gx, &gy, &gz);
