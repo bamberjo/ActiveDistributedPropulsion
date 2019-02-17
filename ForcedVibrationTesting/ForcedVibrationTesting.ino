@@ -10,9 +10,9 @@
 */
 
 //For now softPWMServo.h will be used as the servo.h library doesnt work with the WIFIRE(There is a patch that has come out to address this)
-#include <SoftPWMServo.h>
+//#include <SoftPWMServo.h>
 #include <string.h>
-#include <Motor.h>
+#include "Motor.h"
 
 //**************Accellerometer Initialization
 #include "I2Cdev.h"
@@ -37,17 +37,17 @@ MPU6050 accelgyro;
 int16_t ax, ay, az;
 int16_t gx, gy, gz;
 
-#define LED_PIN 45
+//#define LED_PIN 45
 bool blinkState = false;
 
 //**********INITIALIZATION*******************
 //Connection Pins
-const int signalPin = 33; // GPIO 33 
-const int signalOutPin = 8; // GPIO 8
-const int redButton = 32;//GPIO 32
-const int whiteButton = 31;//GPIO 31
-const int potPin = 14;//AIN 0 Potentiometer Pin
-int ledPin = 45;
+const int signalPin = 8; // GPIO 33 on chipkit
+const int signalOutPin = 9; // GPIO 8 on chipkit
+const int redButton = 7;//GPIO 32 on chipkit
+const int whiteButton = 6;//GPIO 31 on chipkit
+const int potPin = A0;//AIN 0 Potentiometer Pin
+//int ledPin = 45;
 
 //Motors
 const int numberMotors = 4;
@@ -55,7 +55,7 @@ Motor motors[numberMotors];
 
 //Set the number of values in the template oscilation
 //Length of precalculated sine array for retrieval while running
-const int nSamplesOsc = 400;
+const int nSamplesOsc = 150;
 float singleSine[nSamplesOsc];
 float thrusts[4];
 int currSteps[numberMotors] = {0,nSamplesOsc/2,0,nSamplesOsc/2};//This is where the phase offset between all of the motors is set
@@ -111,7 +111,7 @@ void serialThrustAcc(int16_t ax,int16_t ay,int16_t az,int16_t gx,int16_t gy,int1
 
 
 //Also not sure if the flash functions will be needed
-void flash(int times,int ledPin){
+/*void flash(int times,int ledPin){
   
   for(int i = 0; i < times; i++){
     digitalWrite(ledPin,HIGH);
@@ -130,6 +130,7 @@ void fastflash(int times,int ledPin){
     delay(1);
   }
 }
+*/
 
 
 void setup() {
@@ -159,13 +160,13 @@ void setup() {
   accelgyro.setZGyroOffset(-22);
   
   //setup led
-  pinMode(ledPin,OUTPUT);
+//  pinMode(ledPin,OUTPUT);
 
   //Set the pins for all of the motors
-  motors[0].pin = 4;
-  motors[1].pin = 5;
-  motors[2].pin = 6;
-  motors[3].pin = 7;
+  motors[0].attach(2);
+  motors[1].attach(3);
+  motors[2].attach(4);
+  motors[3].attach(5);
     
   //Initialize the button
   pinMode(whiteButton, INPUT);
@@ -229,19 +230,19 @@ void loop() {
    //Go through the arming sequence **Tested(Not on hardware)
    setAllMotors(motors, 0, numberMotors);
    delay(2000);
-   flash(1,ledPin);
+   //flash(1,ledPin);
    setAllMotors(motors, 100, numberMotors);
    delay(5000);
-   flash(2,ledPin);
+   //flash(2,ledPin);
    setAllMotors(motors, 0, numberMotors);
    delay(5000);
-   flash(3,ledPin);
+   //flash(3,ledPin);
    setAllMotors(motors, 10, numberMotors);
    delay(5000);
-   flash(4,ledPin);
+   //flash(4,ledPin);
    setAllMotors(motors, 40, numberMotors);
    delay(1000);
-   flash(5,ledPin);
+   //flash(5,ledPin);
    setAllMotors(motors, 60, numberMotors);
    setAllMotors(motors, 17, numberMotors);//Ideally this will be changed to 0 but not sure if that will work or disarm the motor
    thrusts[0] = 17;
@@ -261,21 +262,21 @@ void loop() {
    accelgyro.getMotion6(&ax, &ay, &az, &gx, &gy, &gz);
 
    //Wait for the white button while sending all of the thrust and accellerometer values
-   //while(!digitalRead(whiteButton)){
+   while(!digitalRead(whiteButton)){
    //while(!Serial.available()){
       if(micros() > (currTime + stepSize)){
          //Step the time and send the accelleration and thrust values
          accelgyro.getMotion6(&ax, &ay, &az, &gx, &gy, &gz);
          serialThrustAcc(ax,ay,az,gx,gy,gz,thrusts,0);
          currTime += stepSize;
-         fastflash(1,ledPin);
+         //fastflash(1,ledPin);
       };
    };
    //Serial.read();
 
 
    //Once the red button has been pushed the oscillation should start
-    unsigned long oscStartTime = micros();
+    oscStartTime = micros();
     startTime = micros();//Get the current time
     currTime = startTime;
     digitalWrite(signalOutPin, HIGH);
@@ -328,7 +329,7 @@ void loop() {
       if(micros() > (currTime + stepSize)){
          //Step the time and send the accelleration and thrust values
          accelgyro.getMotion6(&ax, &ay, &az, &gx, &gy, &gz);
-         serialThrustAcc(ax,ay,az,gx,gy,gz,thrusts);
+         serialThrustAcc(ax,ay,az,gx,gy,gz,thrusts,currTime);
          currTime += stepSize;
       };
    };
