@@ -261,7 +261,7 @@ void loop() {
    accelgyro.getMotion6(&ax, &ay, &az, &gx, &gy, &gz);
 
    //Wait for the white button while sending all of the thrust and accellerometer values
-   //while(!digitalRead(whiteButton)){
+   while(!digitalRead(whiteButton)){
    //while(!Serial.available()){
       if(micros() > (currTime + stepSize)){
          //Step the time and send the accelleration and thrust values
@@ -275,7 +275,7 @@ void loop() {
 
 
    //Once the red button has been pushed the oscillation should start
-    unsigned long oscStartTime = micros();
+    oscStartTime = micros();
     startTime = micros();//Get the current time
     currTime = startTime;
     digitalWrite(signalOutPin, HIGH);
@@ -328,7 +328,7 @@ void loop() {
       if(micros() > (currTime + stepSize)){
          //Step the time and send the accelleration and thrust values
          accelgyro.getMotion6(&ax, &ay, &az, &gx, &gy, &gz);
-         serialThrustAcc(ax,ay,az,gx,gy,gz,thrusts);
+         serialThrustAcc(ax,ay,az,gx,gy,gz,thrusts,currTime);
          currTime += stepSize;
       };
    };
