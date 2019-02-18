@@ -125,7 +125,7 @@ void setup() {
     // configure Arduino LED pin for output
     startTime = micros();
     currTime = startTime;
-    pinmode(signalPin,INPUT);
+    pinMode(signalPin,INPUT);
 }
 
 void loop() {
@@ -137,7 +137,8 @@ void loop() {
     // these methods (and a few others) are also available
     //accelgyro.getAcceleration(&ax, &ay, &az);
     //accelgyro.getRotation(&gx, &gy, &gz);
-
+/*
+    //Serial.println(digitalRead(signalPin));
     if(digitalRead(signalPin) && !signaled){
       signaled = true;
       startTime = micros();
@@ -149,7 +150,8 @@ void loop() {
     }else{
       Serial.print(currTime-startTime); Serial.print(",");
     }
-    
+    */
+    Serial.print(currTime-startTime); Serial.print(",");
     
     Serial.print(ax); Serial.print(",");
     Serial.print(ay); Serial.print(",");
