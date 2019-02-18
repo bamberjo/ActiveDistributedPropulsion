@@ -48,6 +48,7 @@ const int redButton = 32;//GPIO 32
 const int whiteButton = 31;//GPIO 31
 const int potPin = 14;//AIN 0 Potentiometer Pin
 int ledPin = 45;
+unsigned long pulseDuration = 10000;
 
 //Motors
 const int numberMotors = 4;
@@ -282,6 +283,10 @@ void loop() {
 
     //Run the osciallation until the red button is pushed
    while(!digitalRead(redButton)){
+    if(currTime > pulseDuration){
+      //Turn off the signal
+      digitalWrite(signalOutPin, LOW);
+    }
    //while(!Serial.available()){
     /*
       if(Serial.available()){
